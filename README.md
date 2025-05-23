@@ -48,4 +48,3 @@ This project uses uv as the package and environment manager, which provides a fa
     ```bash
     pre-commit run --all-files
     ```
-
