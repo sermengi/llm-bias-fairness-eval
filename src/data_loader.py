@@ -1,5 +1,5 @@
 from datasets import load_dataset
-from src import logging
+from src import logger
 
 
 class GSM_MC_PromptBuilder:
@@ -16,20 +16,20 @@ class GSM_MC_PromptBuilder:
             self.dataset = load_dataset(
                 self.dataset_name, data_files=self.data_files, split=self.split
             )
-            logging.info(f"{self.dataset_name} is loaded successfully.")
+            logger.info(f"{self.dataset_name} is loaded successfully.")
         except Exception as e:
-            logging.error(f"Failed to load dataset {self.dataset_name}. Error: {e}")
+            logger.error(f"Failed to load dataset {self.dataset_name}. Error: {e}")
             raise ValueError(
                 "Please check the dataset configurations: dataset name, split, or file path."
             )
 
         if self.max_samples is not None:
             if self.max_samples > len(self.dataset):
-                logging.warning(
+                logger.warning(
                     f"{self.dataset_name} doesn't have {self.max_samples} samples in {self.split} split. Collecting all the available samples: {len(self.dataset)}"
                 )
             else:
-                logging.info(
+                logger.info(
                     f"Successfully retrieved {self.max_samples} number of samples"
                 )
                 self.dataset = self.dataset.select(range(self.max_samples))
@@ -53,7 +53,7 @@ class GSM_MC_PromptBuilder:
         try:
             sample = self.dataset[index]
         except IndexError as e:
-            logging.error(
+            logger.error(
                 f"Index {index} is out of bounds for dataset of size {len(self.dataset)}."
             )
             raise e
@@ -63,17 +63,17 @@ class GSM_MC_PromptBuilder:
         return prompt
 
     def generate_prompts(self, context=None):
-        logging.info("Generating prompts for all samples...")
+        logger.info("Generating prompts for all samples...")
         prompts = [
             self.format_sample(sample, context=context) for sample in self.dataset
         ]
-        logging.info(f"Generated {len(prompts)} prompts.")
+        logger.info(f"Generated {len(prompts)} prompts.")
         return prompts
 
     def generate_prompt_variants(self, context_list, save_metadata=False):
         prompt_variants = []
 
-        logging.info("Generating prompt variants with multiple contexts...")
+        logger.info("Generating prompt variants with multiple contexts...")
         for idx, sample in enumerate(self.dataset):
             for context in context_list:
                 prompt = self.format_sample(sample, context=context)
@@ -91,5 +91,5 @@ class GSM_MC_PromptBuilder:
                     )
                 prompt_variants.append(item)
 
-        logging.info(f"Generated {len(prompt_variants)} prompt variants.")
+        logger.info(f"Generated {len(prompt_variants)} prompt variants.")
         return prompt_variants

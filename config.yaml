@@ -1,0 +1,5 @@
+dataset_configs:
+  dataset_name: "satoshidg/GSM-MC-Stage"
+  data_files: "test.csv"
+  split: "train"
+  max_samples: 5
