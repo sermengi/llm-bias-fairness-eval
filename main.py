@@ -1,5 +1,6 @@
 from src.config import ConfigurationManager
 from src.data_loader import GSM_MC_PromptBuilder
+from src.models import MultipleChoiceLLM
 
 
 def main():
@@ -14,7 +15,13 @@ def main():
         max_samples=dataset_config.max_samples,
     )
 
-    print(prompt_builder.get_sample_prompt(index=0))
+    sample_prompt = prompt_builder.get_sample_prompt(index=0, include_answer=False)
+    print(sample_prompt)
+
+    model_name = "nvidia/Llama-3.1-Nemotron-Nano-4B-v1.1"
+    model = MultipleChoiceLLM(model_name=model_name)
+    pred = model.predict(prompt=sample_prompt)
+    print("The model prediction: ", pred)
 
 
 if __name__ == "__main__":
