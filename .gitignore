@@ -1,4 +1,22 @@
-.venv/
-logs/
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*.so
+
+# Virtual environments
+env/
+venv/
+.venv/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Pytest
+.cache/
+*.log
+
+# VSCode
+.vscode/
+
+# Ignore logs directory
+logs/
