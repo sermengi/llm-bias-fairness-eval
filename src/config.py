@@ -1,6 +1,7 @@
-from src.common import read_yaml
 from pydantic import BaseModel, ValidationError
+
 from src import logger
+from src.common import read_yaml
 
 
 class DatasetConfig(BaseModel):

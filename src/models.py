@@ -1,6 +1,7 @@
 import torch
 import torch_xla.core.xla_model as xm
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
 from src import logger
 
 

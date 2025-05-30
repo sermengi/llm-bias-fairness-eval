@@ -1,7 +1,6 @@
+import logging
 import os
 import sys
-import logging
-
 
 log_formatter = "[%(asctime)s: %(levelname)s: %(module)s: %(message)s]"
 log_dir = "logs"
