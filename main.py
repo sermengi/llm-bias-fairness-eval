@@ -7,6 +7,7 @@ def main():
     config_file_path = "config.yaml"
     config = ConfigurationManager(config_file_path=config_file_path)
     dataset_config = config.get_dataset_configuration()
+    model_config = config.get_model_configuration()
 
     prompt_builder = GSM_MC_PromptBuilder(
         dataset_config.dataset_name,
@@ -18,8 +19,9 @@ def main():
     sample_prompt = prompt_builder.get_sample_prompt(index=0, include_answer=False)
     print(sample_prompt)
 
-    model_name = "nvidia/Llama-3.1-Nemotron-Nano-4B-v1.1"
-    model = MultipleChoiceLLM(model_name=model_name)
+    model_name = model_config.model_name
+    allowed_choices = model_config.allowed_choices
+    model = MultipleChoiceLLM(model_name=model_name, allowed_choices=allowed_choices)
     pred = model.predict(prompt=sample_prompt)
     print("The model prediction: ", pred)
 

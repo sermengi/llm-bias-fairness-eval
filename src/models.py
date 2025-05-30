@@ -1,15 +1,31 @@
 import torch
 import torch_xla.core.xla_model as xm
 from transformers import AutoTokenizer, AutoModelForCausalLM
+from src import logger
 
 
 class MultipleChoiceLLM:
     def __init__(self, model_name, allowed_choices=None):
-        self.device = xm.xla_device()
+        try:
+            self.device = xm.xla_device()
+            logger.info(f"TPU device acquired: {self.device}")
+        except RuntimeError as e:
+            logger.error(f"Error acquiring TPU: {e}")
+            logger.error("Falling back to CPU. Inference will be much slower.")
+            self.device = torch.device("cpu")
+
         self.model_name = model_name
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModelForCausalLM.from_pretrained(model_name).to(self.device)
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_name, device_map=None, torch_dtype=torch.bfloat16
+        )
+
+        if self.device.type == "xla":
+            self.model = self.model.to(self.device)
+            logger.info("Model successfully moved to TPU.")
+        else:
+            logger.info("Model remains on CPU.")
 
         self.allowed_choices = allowed_choices or ["A", "B", "C", "D"]
         self.allowed_token_ids = self._get_allowed_token_ids()

@@ -3,3 +3,7 @@ dataset_configs:
   data_files: "test.csv"
   split: "train"
   max_samples: 5
+
+model_configs:
+  model_name: "nvidia/Llama-3.1-Nemotron-Nano-4B-v1.1"
+  allowed_choices: []
