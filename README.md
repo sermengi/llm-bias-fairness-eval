@@ -79,3 +79,11 @@ This project uses uv as the package and environment manager, which provides a fa
     ```bash
     pre-commit run --all-files
     ```
+
+### Quick Test
+
+To test the model whether is predicting expected answers with the predifined prompts, you can run:
+
+```bash
+pytest -v tests/test_model_eval.py
+```
