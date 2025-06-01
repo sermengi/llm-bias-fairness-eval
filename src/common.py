@@ -1,3 +1,5 @@
+import os
+
 import yaml
 from box import ConfigBox
 
@@ -12,3 +14,9 @@ def read_yaml(path_to_yaml):
             return ConfigBox(content)
     except Exception as e:
         raise e
+
+
+def create_directory(path_to_directory, verbose=True):
+    os.makedirs(path_to_directory, exist_ok=True)
+    if verbose:
+        logger.info(f"{path_to_directory} directory created")

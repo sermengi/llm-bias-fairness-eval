@@ -20,3 +20,4 @@ venv/
 
 # Ignore logs directory
 logs/
+artifacts/

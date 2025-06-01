@@ -63,13 +63,28 @@ class GSM_MC_PromptBuilder:
         prompt = self.format_sample(sample=sample, context=context, answer=answer)
         return prompt
 
-    def generate_prompts(self, context=None):
-        logger.info("Generating prompts for all samples...")
-        prompts = [
-            self.format_sample(sample, context=context) for sample in self.dataset
-        ]
-        logger.info(f"Generated {len(prompts)} prompts.")
-        return prompts
+    def generate_prompts_and_metadata(self, context=None):
+        logger.info("Generating prompts and metadata for all samples...")
+        outputs = []
+
+        for idx, sample in enumerate(self.dataset):
+            answer = sample["Answer"]
+            question = sample["Question"]
+            choices = {k: sample.get(k, "") for k in ["A", "B", "C", "D"]}
+            prompt = self.format_sample(sample, answer=None)
+
+            item = {
+                "sample_id": idx,
+                "question": question,
+                "choices": choices,
+                "prompt": prompt,
+                "answer": answer,
+            }
+
+            outputs.append(item)
+
+        logger.info(f"Generated {len(outputs)} prompts.")
+        return outputs
 
     def generate_prompt_variants(self, context_list, save_metadata=False):
         prompt_variants = []

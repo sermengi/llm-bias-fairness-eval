@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ValidationError
 
 from src import logger
-from src.common import read_yaml
+from src.common import create_directory, read_yaml
 
 
 class DatasetConfig(BaseModel):
@@ -14,6 +14,11 @@ class DatasetConfig(BaseModel):
 class ModelConfig(BaseModel):
     model_name: str
     allowed_choices: list
+
+
+class ArtifactConfig(BaseModel):
+    artifacts_root: str
+    results_csv_path: str
 
 
 class ConfigurationManager:
@@ -44,3 +49,14 @@ class ConfigurationManager:
             return model_config
         except ValidationError as e:
             logger.error(f"Model configuration is not valid: \n{e}")
+
+    def get_artifact_configuration(self) -> ArtifactConfig:
+        config = self.config.artifact_configs
+        create_directory(config.artifacts_root)
+        try:
+            artifact_config = ArtifactConfig(
+                results_csv_path=config.results_csv_path,
+            )
+            return artifact_config
+        except ValidationError as e:
+            logger.error(f"Artifact configuration is not valid: \n{e}")

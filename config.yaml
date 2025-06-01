@@ -7,3 +7,7 @@ dataset_configs:
 model_configs:
   model_name: "nvidia/Llama-3.1-Nemotron-Nano-4B-v1.1"
   allowed_choices: []
+
+artifact_configs:
+  artifacts_root: "artifacts"
+  results_csv_path: "artifacts/predictions.csv"
