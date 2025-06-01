@@ -26,6 +26,7 @@ class ModelInferencePipeline:
         sample_prompt = self.prompt_builder.get_sample_prompt(
             index=0, include_answer=False
         )
+        self.sample_prompt_for_logging = sample_prompt
         print(sample_prompt)
 
     def initialize_model(self):

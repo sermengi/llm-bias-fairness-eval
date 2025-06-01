@@ -55,6 +55,7 @@ class ConfigurationManager:
         create_directory(config.artifacts_root)
         try:
             artifact_config = ArtifactConfig(
+                artifacts_root=config.artifacts_root,
                 results_csv_path=config.results_csv_path,
             )
             return artifact_config
