@@ -26,12 +26,9 @@ repos:
     - id: isort
       exclude: ^notebooks/
 
-- repo: local
+- repo: https://github.com/kynan/nbstripout
+  rev: 0.8.1
   hooks:
-    - id: jupyter-nb-clear-output
-      name: jupyter-nb-clear-output
+    - id: nbstripout
       files: ^notebooks/.*\.ipynb$
-      language: python
-      additional_dependencies: [nbconvert]
-      entry: python -m nbconvert --ClearOutputPreprocessor.enabled=True --inplace
       stages: [pre-commit]
