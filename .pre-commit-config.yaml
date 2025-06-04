@@ -25,3 +25,13 @@ repos:
   hooks:
     - id: isort
       exclude: ^notebooks/
+
+- repo: local
+  hooks:
+    - id: jupyter-nb-clear-output
+      name: jupyter-nb-clear-output
+      files: ^notebooks/.*\.ipynb$
+      language: python
+      additional_dependencies: [nbconvert]
+      entry: python -m nbconvert --ClearOutputPreprocessor.enabled=True --inplace
+      stages: [pre-commit]

@@ -9,6 +9,7 @@ dependencies = [
     "huggingface-hub[cli]>=0.32.2",
     "ipykernel>=6.29.5",
     "mlflow>=2.22.0",
+    "nbconvert>=7.16.6",
     "pre-commit>=4.2.0",
     "pydantic>=2.11.5",
     "pytest>=8.3.5",
