@@ -1,9 +1,10 @@
 from datasets import load_dataset
+from torch.utils.data import Dataset
 
 from src import logger
 
 
-class GSM_MC_PromptBuilder:
+class GSM_MC_PromptBuilder(Dataset):
     def __init__(self, dataset_name, data_files=None, split="train", max_samples=None):
         self.dataset_name = dataset_name
         self.data_files = data_files
@@ -12,12 +13,17 @@ class GSM_MC_PromptBuilder:
         self.dataset = None
         self._load_dataset()
 
+        self.processed_data = []
+        self._generate_prompts_and_metadata()
+
     def _load_dataset(self):
         try:
             self.dataset = load_dataset(
                 self.dataset_name, data_files=self.data_files, split=self.split
             )
-            logger.info(f"{self.dataset_name} is loaded successfully.")
+            logger.info(
+                f"Dataset {self.dataset_name} (split: {self.split}) is loaded successfully."
+            )
         except Exception as e:
             logger.error(f"Failed to load dataset {self.dataset_name}. Error: {e}")
             raise ValueError(
@@ -28,11 +34,10 @@ class GSM_MC_PromptBuilder:
             if self.max_samples > len(self.dataset):
                 logger.warning(
                     f"{self.dataset_name} doesn't have {self.max_samples} samples in {self.split} split. Collecting all the available samples: {len(self.dataset)}"
+                    f"Using all available samples: {len(self.dataset)}"
                 )
             else:
-                logger.info(
-                    f"Successfully retrieved {self.max_samples} number of samples"
-                )
+                logger.info(f"Successfully retrieved {self.max_samples} samples")
                 self.dataset = self.dataset.select(range(self.max_samples))
 
     def format_sample(self, sample, context=None, answer=None):
@@ -63,7 +68,7 @@ class GSM_MC_PromptBuilder:
         prompt = self.format_sample(sample=sample, context=context, answer=answer)
         return prompt
 
-    def generate_prompts_and_metadata(self, context=None):
+    def _generate_prompts_and_metadata(self, context=None):
         logger.info("Generating prompts and metadata for all samples...")
         outputs = []
 
@@ -83,8 +88,18 @@ class GSM_MC_PromptBuilder:
 
             outputs.append(item)
 
-        logger.info(f"Generated {len(outputs)} prompts.")
-        return outputs
+        self.processed_data = outputs
+        logger.info(f"Generated {len(self.processed_data)} prompts.")
+
+    def __len__(self):
+        return len(self.processed_data)
+
+    def __getitem__(self, idx):
+        if idx < 0 or idx >= len(self.processed_data):
+            raise IndexError(
+                f"Index {idx} is out of bounds for dataset of size {len(self.processed_data)}."
+            )
+        return self.processed_data[idx]
 
     def generate_prompt_variants(self, context_list, save_metadata=False):
         prompt_variants = []

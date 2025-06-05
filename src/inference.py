@@ -1,6 +1,13 @@
-import pandas as pd
+import json
+import os
+
+import torch_xla.core.xla_model as xm
+import torch_xla.distributed.parallel_loader as pl
+import torch_xla.distributed.xla_multiprocessing as xmp
+from torch.utils.data import DataLoader, DistributedSampler
 from tqdm import tqdm
 
+from src import logger
 from src.config import ConfigurationManager
 from src.data_loader import GSM_MC_PromptBuilder
 from src.models import MultipleChoiceLLM
@@ -8,53 +15,91 @@ from src.models import MultipleChoiceLLM
 CONFIG_FILE_PATH = "config.yaml"
 
 
-class ModelInferencePipeline:
-    def __init__(self):
-        self.config = ConfigurationManager(CONFIG_FILE_PATH)
-        self.dataset_config = self.config.get_dataset_configuration()
-        self.model_config = self.config.get_model_configuration()
-        self.initialize_dataset()
-        self.initialize_model()
+def _inference_worker(rank, config):
+    device = xm.xla_device()
+    world_size = 1  # xr.global_runtime_device_count()
+    is_main_process = rank == 0
+    logger.info(f"[Rank {rank}/{world_size}] Worker started on device: {device}")
 
-    def initialize_dataset(self):
-        self.prompt_builder = GSM_MC_PromptBuilder(
-            self.dataset_config.dataset_name,
-            data_files=self.dataset_config.data_files,
-            split=self.dataset_config.split,
-            max_samples=self.dataset_config.max_samples,
-        )
-        sample_prompt = self.prompt_builder.get_sample_prompt(
-            index=0, include_answer=False
-        )
-        self.sample_prompt_for_logging = sample_prompt
-        print(sample_prompt)
+    dataset_config = config["dataset"]
+    model_config = config["model"]
+    artifact_config = config["artifact"]
 
-    def initialize_model(self):
-        model_name = self.model_config.model_name
-        allowed_choices = self.model_config.allowed_choices
-        self.model = MultipleChoiceLLM(
-            model_name=model_name, allowed_choices=allowed_choices
-        )
+    dataset = GSM_MC_PromptBuilder(
+        dataset_config.dataset_name,
+        data_files=dataset_config.data_files,
+        split=dataset_config.split,
+        max_samples=dataset_config.max_samples,
+    )
 
-    def run_inference(self):
-        outputs = self.prompt_builder.generate_prompts_and_metadata()
-        results = []
-        for sample in tqdm(outputs, desc="Running Inference", total=len(outputs)):
-            prompt = sample["prompt"]
-            prediction = self.model.predict(prompt)
+    sampler = DistributedSampler(
+        dataset, num_replicas=world_size, rank=rank, shuffle=False
+    )
 
-            results.append(
+    dataloader = DataLoader(
+        dataset,
+        batch_size=model_config.batch_size,
+        sampler=sampler,
+        num_workers=1,
+        drop_last=False,
+    )
+
+    parallel_loader = pl.ParallelLoader(dataloader, [device])
+
+    model = MultipleChoiceLLM(
+        model_name=model_config.model_name,
+        allowed_choices=model_config.allowed_choices,
+        tokenizer_padding_side=model_config.tokenizer_padding_side,
+    )
+
+    rank_results = []
+    pbar = tqdm(
+        parallel_loader.per_device_loader(device),
+        desc=f"Inference Rank {rank}",
+        total=len(parallel_loader.per_device_loader(device)),
+        disable=not is_main_process,
+    )
+
+    for batch in pbar:
+        prompts = batch["prompt"]
+        preds = model.predict(prompts)
+
+        for i in range(len(prompts)):
+            rank_results.append(
                 {
-                    "sample_id": sample["sample_id"],
-                    "question": sample["question"],
-                    "choice_A": sample["choices"].get("A", ""),
-                    "choice_B": sample["choices"].get("B", ""),
-                    "choice_C": sample["choices"].get("C", ""),
-                    "choice_D": sample["choices"].get("D", ""),
-                    "prompt": sample["prompt"],
-                    "answer": sample["answer"],
-                    "prediction": prediction,
+                    "sample_id": batch["sample_id"][i].item(),
+                    "question": batch["question"][i],
+                    "choice_A": batch["choices"].get("A", "")[i].item(),
+                    "choice_B": batch["choices"].get("B", "")[i].item(),
+                    "choice_C": batch["choices"].get("C", "")[i].item(),
+                    "choice_D": batch["choices"].get("D", "")[i].item(),
+                    "prompt": batch["prompt"][i],
+                    "answer": batch["answer"][i],
+                    "prediction": preds[i],
                 }
             )
 
-        return pd.DataFrame(results)
+    output_dir = artifact_config.artifacts_root
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, f"rank_{rank}_results.json")
+    with open(output_path, "w") as f:
+        json.dump(rank_results, f)
+
+    logger.info(f"[Rank {rank}] Inference complete. Results saved to {output_path}")
+
+
+class ModelInferencePipeline:
+    def __init__(self):
+        self.config_manager = ConfigurationManager(CONFIG_FILE_PATH)
+
+    def run_inference(self):
+        logger.info("Starting XLA multiprocessing inference pipeline.")
+
+        config = {
+            "dataset": self.config_manager.get_dataset_configuration(),
+            "model": self.config_manager.get_model_configuration(),
+            "artifact": self.config_manager.get_artifact_configuration(),
+        }
+
+        xmp.spawn(_inference_worker, args=(config,), nprocs=1, start_method="fork")
+        logger.info("All inference workers have completed their tasks.")
