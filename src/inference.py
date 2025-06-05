@@ -1,6 +1,7 @@
 import json
 import os
 
+import pandas as pd
 import torch_xla.core.xla_model as xm
 import torch_xla.distributed.parallel_loader as pl
 import torch_xla.distributed.xla_multiprocessing as xmp
@@ -91,15 +92,34 @@ def _inference_worker(rank, config):
 class ModelInferencePipeline:
     def __init__(self):
         self.config_manager = ConfigurationManager(CONFIG_FILE_PATH)
-
-    def run_inference(self):
-        logger.info("Starting XLA multiprocessing inference pipeline.")
-
-        config = {
+        self.config = {
             "dataset": self.config_manager.get_dataset_configuration(),
             "model": self.config_manager.get_model_configuration(),
             "artifact": self.config_manager.get_artifact_configuration(),
         }
 
-        xmp.spawn(_inference_worker, args=(config,), nprocs=1, start_method="fork")
+    def run_inference(self):
+        logger.info("Starting XLA multiprocessing inference pipeline.")
+        xmp.spawn(_inference_worker, args=(self.config,), nprocs=1, start_method="fork")
         logger.info("All inference workers have completed their tasks.")
+        self._aggregate_results()
+
+    def _aggregate_results(self):
+        logger.info("Aggregating results from all worker processes...")
+        artifact_config = self.config["artifact"]
+        output_dir = artifact_config.artifacts_root
+        results_csv_path = artifact_config.results_csv_path
+
+        all_results = []
+        for filename in sorted(os.listdir(output_dir)):
+            if filename.startswith("rank_") and filename.endswith("results.json"):
+                filepath = os.path.join(output_dir, filename)
+                with open(filepath, "r") as f:
+                    rank_results = json.load(f)
+                    all_results.extend(rank_results)
+                os.remove(filepath)
+
+        df = pd.DataFrame(all_results)
+        df = df.sort_values(by="sample_id").reset_index(drop=True)
+        df.to_csv(results_csv_path, index=False)
+        logger.info(f"Results saved to {results_csv_path}")
