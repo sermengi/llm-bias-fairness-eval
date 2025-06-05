@@ -14,6 +14,8 @@ class DatasetConfig(BaseModel):
 class ModelConfig(BaseModel):
     model_name: str
     allowed_choices: list
+    batch_size: int
+    tokenizer_padding_side: str
 
 
 class ArtifactConfig(BaseModel):
@@ -45,6 +47,8 @@ class ConfigurationManager:
             model_config = ModelConfig(
                 model_name=config.model_name,
                 allowed_choices=config.allowed_choices,
+                batch_size=config.batch_size,
+                tokenizer_padding_side=config.tokenizer_padding_side,
             )
             return model_config
         except ValidationError as e:
