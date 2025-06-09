@@ -14,6 +14,7 @@ from src.data_loader import GSM_MC_PromptBuilder
 from src.models import MultipleChoiceLLM
 
 CONFIG_FILE_PATH = "config.yaml"
+CONTEXT_CONFIG_FILE_PATH = "configs/context_templates.yaml"
 
 
 def _inference_worker(rank, config):
@@ -25,9 +26,11 @@ def _inference_worker(rank, config):
     dataset_config = config["dataset"]
     model_config = config["model"]
     artifact_config = config["artifact"]
+    contexts = config["contexts"]
 
     dataset = GSM_MC_PromptBuilder(
         dataset_config.dataset_name,
+        contexts=contexts,
         data_files=dataset_config.data_files,
         split=dataset_config.split,
         max_samples=dataset_config.max_samples,
@@ -68,6 +71,7 @@ def _inference_worker(rank, config):
         for i in range(len(prompts)):
             rank_results.append(
                 {
+                    "prompt_id": batch["prompt_id"][i].item(),
                     "sample_id": batch["sample_id"][i].item(),
                     "question": batch["question"][i],
                     "choice_A": batch["choices"].get("A", "")[i].item(),
@@ -75,6 +79,8 @@ def _inference_worker(rank, config):
                     "choice_C": batch["choices"].get("C", "")[i].item(),
                     "choice_D": batch["choices"].get("D", "")[i].item(),
                     "prompt": batch["prompt"][i],
+                    "context_category": batch["context_info"]["category"][i],
+                    "context_identity": batch["context_info"]["identity"][i],
                     "answer": batch["answer"][i],
                     "prediction": preds[i],
                 }
@@ -91,11 +97,15 @@ def _inference_worker(rank, config):
 
 class ModelInferencePipeline:
     def __init__(self):
-        self.config_manager = ConfigurationManager(CONFIG_FILE_PATH)
+        self.config_manager = ConfigurationManager(
+            config_file_path=CONFIG_FILE_PATH,
+            context_config_file_path=CONTEXT_CONFIG_FILE_PATH,
+        )
         self.config = {
             "dataset": self.config_manager.get_dataset_configuration(),
             "model": self.config_manager.get_model_configuration(),
             "artifact": self.config_manager.get_artifact_configuration(),
+            "contexts": self.config_manager.get_contexts_configuration(),
         }
 
     def run_inference(self):

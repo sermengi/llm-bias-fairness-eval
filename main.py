@@ -32,6 +32,7 @@ def main():
             artifact_config.results_csv_path, artifact_path="inference_results"
         )
         mlflow.log_artifact("config.yaml", "configurations")
+        mlflow.log_artifact("configs/context_templates.yaml", "configurations")
 
 
 if __name__ == "__main__":

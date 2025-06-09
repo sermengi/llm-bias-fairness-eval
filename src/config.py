@@ -24,8 +24,9 @@ class ArtifactConfig(BaseModel):
 
 
 class ConfigurationManager:
-    def __init__(self, config_file_path):
+    def __init__(self, config_file_path, context_config_file_path):
         self.config = read_yaml(config_file_path)
+        self.context_config = read_yaml(context_config_file_path)
 
     def get_dataset_configuration(self) -> DatasetConfig:
         config = self.config.dataset_configs
@@ -65,3 +66,20 @@ class ConfigurationManager:
             return artifact_config
         except ValidationError as e:
             logger.error(f"Artifact configuration is not valid: \n{e}")
+
+    def get_contexts_configuration(self) -> dict:
+        base_context = self.context_config["base_context"]
+        identity_formatting = self.context_config.get("identity_formatting", {})
+        contexts = self.context_config.get("contexts", {})
+
+        full_contexts = {}
+        for category, values in contexts.items():
+            identity_format = identity_formatting.get("category", "{identity}")
+            full_contexts[category] = {
+                identity: base_context.format(
+                    identity=identity_format.format(identity=identity)
+                )
+                for identity in values
+            }
+
+        return full_contexts

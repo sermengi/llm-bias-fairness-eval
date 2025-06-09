@@ -5,8 +5,11 @@ from src import logger
 
 
 class GSM_MC_PromptBuilder(Dataset):
-    def __init__(self, dataset_name, data_files=None, split="train", max_samples=None):
+    def __init__(
+        self, dataset_name, contexts, data_files=None, split="train", max_samples=None
+    ):
         self.dataset_name = dataset_name
+        self.contexts = contexts
         self.data_files = data_files
         self.split = split
         self.max_samples = max_samples
@@ -68,25 +71,49 @@ class GSM_MC_PromptBuilder(Dataset):
         prompt = self.format_sample(sample=sample, context=context, answer=answer)
         return prompt
 
-    def _generate_prompts_and_metadata(self, context=None):
+    def _generate_prompts_and_metadata(self):
         logger.info("Generating prompts and metadata for all samples...")
         outputs = []
+        prompt_id = 0
 
         for idx, sample in enumerate(self.dataset):
             answer = sample["Answer"]
             question = sample["Question"]
             choices = {k: sample.get(k, "") for k in ["A", "B", "C", "D"]}
-            prompt = self.format_sample(sample, answer=None)
 
-            item = {
-                "sample_id": idx,
-                "question": question,
-                "choices": choices,
-                "prompt": prompt,
-                "answer": answer,
-            }
+            # generate a baseline prompt
+            if prompt_id % len(self.dataset) == 0:
+                prompt = self.format_sample(sample, context="", answer=None)
 
-            outputs.append(item)
+                item = {
+                    "prompt_id": prompt_id,
+                    "sample_id": idx,
+                    "question": question,
+                    "choices": choices,
+                    "prompt": prompt,
+                    "answer": answer,
+                    "context_info": {"category": "baseline", "identity": "none"},
+                }
+                outputs.append(item)
+                prompt_id += 1
+
+            for category, contexts_in_category in self.contexts.items():
+                for identity, context_prompt in contexts_in_category.items():
+                    prompt = self.format_sample(
+                        sample, context=context_prompt, answer=None
+                    )
+
+                    item = {
+                        "prompt_id": prompt_id,
+                        "sample_id": idx,
+                        "question": question,
+                        "choices": choices,
+                        "prompt": prompt,
+                        "answer": answer,
+                        "context_info": {"category": category, "identity": identity},
+                    }
+                    outputs.append(item)
+                    prompt_id += 1
 
         self.processed_data = outputs
         logger.info(f"Generated {len(self.processed_data)} prompts.")
@@ -100,27 +127,3 @@ class GSM_MC_PromptBuilder(Dataset):
                 f"Index {idx} is out of bounds for dataset of size {len(self.processed_data)}."
             )
         return self.processed_data[idx]
-
-    def generate_prompt_variants(self, context_list, save_metadata=False):
-        prompt_variants = []
-
-        logger.info("Generating prompt variants with multiple contexts...")
-        for idx, sample in enumerate(self.dataset):
-            for context in context_list:
-                prompt = self.format_sample(sample, context=context)
-                item = {
-                    "prompt": prompt,
-                    "context": context,
-                }
-                if save_metadata:
-                    item.update(
-                        {
-                            "sample_id": idx,
-                            "question": sample["Question"],
-                            "answer": sample["Answer"],
-                        }
-                    )
-                prompt_variants.append(item)
-
-        logger.info(f"Generated {len(prompt_variants)} prompt variants.")
-        return prompt_variants
