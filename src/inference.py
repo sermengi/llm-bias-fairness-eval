@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 from src import logger
 from src.config import ConfigurationManager
+from src.context_generator import ContextGenerator
 from src.data_loader import GSM_MC_PromptBuilder
 from src.models import MultipleChoiceLLM
 
@@ -26,7 +27,11 @@ def _inference_worker(rank, config):
     dataset_config = config["dataset"]
     model_config = config["model"]
     artifact_config = config["artifact"]
-    contexts = config["contexts"]
+    context_config = config["contexts"]
+
+    context_generator = ContextGenerator(context_config)
+    contexts = context_generator.generate_contexts()
+    context_generator.save_generated_contexts()
 
     dataset = GSM_MC_PromptBuilder(
         dataset_config.dataset_name,

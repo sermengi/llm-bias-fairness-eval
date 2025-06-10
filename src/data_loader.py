@@ -81,22 +81,6 @@ class GSM_MC_PromptBuilder(Dataset):
             question = sample["Question"]
             choices = {k: sample.get(k, "") for k in ["A", "B", "C", "D"]}
 
-            # generate a baseline prompt
-            if prompt_id % len(self.dataset) == 0:
-                prompt = self.format_sample(sample, context="", answer=None)
-
-                item = {
-                    "prompt_id": prompt_id,
-                    "sample_id": idx,
-                    "question": question,
-                    "choices": choices,
-                    "prompt": prompt,
-                    "answer": answer,
-                    "context_info": {"category": "baseline", "identity": "none"},
-                }
-                outputs.append(item)
-                prompt_id += 1
-
             for category, contexts_in_category in self.contexts.items():
                 for identity, context_prompt in contexts_in_category.items():
                     prompt = self.format_sample(

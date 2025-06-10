@@ -23,6 +23,12 @@ class ArtifactConfig(BaseModel):
     results_csv_path: str
 
 
+class ContextConfig(BaseModel):
+    base_context: str
+    contexts: dict
+    identity_formatting: dict
+
+
 class ConfigurationManager:
     def __init__(self, config_file_path, context_config_file_path):
         self.config = read_yaml(config_file_path)
@@ -67,19 +73,13 @@ class ConfigurationManager:
         except ValidationError as e:
             logger.error(f"Artifact configuration is not valid: \n{e}")
 
-    def get_contexts_configuration(self) -> dict:
-        base_context = self.context_config["base_context"]
-        identity_formatting = self.context_config.get("identity_formatting", {})
-        contexts = self.context_config.get("contexts", {})
-
-        full_contexts = {}
-        for category, values in contexts.items():
-            identity_format = identity_formatting.get("category", "{identity}")
-            full_contexts[category] = {
-                identity: base_context.format(
-                    identity=identity_format.format(identity=identity)
-                )
-                for identity in values
-            }
-
-        return full_contexts
+    def get_contexts_configuration(self) -> ContextConfig:
+        try:
+            context_config = ContextConfig(
+                base_context=self.context_config.base_context,
+                contexts=self.context_config.contexts,
+                identity_formatting=self.context_config.identity_formatting,
+            )
+            return context_config
+        except ValidationError as e:
+            logger.error(f"Context configuration is not valid: \n{e}")
