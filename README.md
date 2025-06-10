@@ -20,11 +20,14 @@ This project is motivated by the need to:
 ### Project Structure
 ```bash
 llm-bias-fairness-eval/
+├── .gitignore
+├── .pre-commit-config.yaml
+├── .python-version
 ├── LICENSE
 ├── README.md
-├── config.yaml
-├── logs
-│   └── logging.log
+├── configs
+│   ├── config.yaml
+│   └── context_templates.yaml
 ├── main.py
 ├── notebooks
 │   ├── 01_literature_review.ipynb
@@ -35,8 +38,10 @@ llm-bias-fairness-eval/
 │   ├── __init__.py
 │   ├── common.py
 │   ├── config.py
+│   ├── context_generator.py
 │   ├── data_loader.py
 │   ├── evaluation.py
+│   ├── inference.py
 │   ├── metrics.py
 │   ├── models.py
 │   ├── qualitative.py
@@ -44,7 +49,8 @@ llm-bias-fairness-eval/
 │   └── visualization.py
 ├── tests
 │   ├── __init__.py
-│   └── test_metrics.py
+│   ├── test_metrics.py
+│   └── test_model_eval.py
 └── uv.lock
 ```
 
@@ -54,22 +60,21 @@ This project uses uv as the package and environment manager, which provides a fa
 * Python 3.11 is required.
     > ℹ️ uv will automatically manage the virtual environment using the compatible Python version. However, since this project utilizes pytorch/xla, which currently supports up to Python 3.11, it is recommended to have Python 3.11 installed on your system.
 
-
 1. **Clone the Repository**
     ```bash
     git clone https://github.com/sermengi/llm-bias-fairness-eval.git
     cd llm-bias-fairness-eval
     ```
-2. **Install <code>uv</code>**
-    ```bash
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    ```
-3. **Create the Virtual Environment and Install Dependencies**
+2. **Create the Virtual Environment and Install Dependencies**
     ```bash
     uv sync
     ```
     This will create a virtual environment and install all dependencies as specified in <code>pyproject.toml</code> and locked in <code>uv.lock</code>.
-4. **Set Up Pre-commit Hooks** <br>
+    If the <code>uv</code> package is not installed on your system, you can install it using the following command for Linux:
+    ```bash
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+3. **Set Up Pre-commit Hooks** <br>
     To ensure code quality and consistency, we use ruff for linting and pre-commit for formatting checks. <br>
     Set up the pre-commit hooks:
     ```bash

@@ -3,7 +3,12 @@ import pytest
 from src.config import ConfigurationManager
 from src.models import MultipleChoiceLLM
 
-config = ConfigurationManager(config_file_path="config.yaml")
+CONFIG_FILE_PATH = "configs/config.yaml"
+CONTEXT_CONFIG_FILE_PATH = "configs/context_templates.yaml"
+
+config = ConfigurationManager(
+    config_file_path=CONFIG_FILE_PATH, context_config_file_path=CONTEXT_CONFIG_FILE_PATH
+)
 model_configs = config.get_model_configuration()
 
 test_questions = [

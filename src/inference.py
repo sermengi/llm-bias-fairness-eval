@@ -14,7 +14,7 @@ from src.context_generator import ContextGenerator
 from src.data_loader import GSM_MC_PromptBuilder
 from src.models import MultipleChoiceLLM
 
-CONFIG_FILE_PATH = "config.yaml"
+CONFIG_FILE_PATH = "configs/config.yaml"
 CONTEXT_CONFIG_FILE_PATH = "configs/context_templates.yaml"
 
 
