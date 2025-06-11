@@ -14,13 +14,12 @@ from src.context_generator import ContextGenerator
 from src.data_loader import GSM_MC_PromptBuilder
 from src.models import MultipleChoiceLLM
 
-CONFIG_FILE_PATH = "configs/config.yaml"
-CONTEXT_CONFIG_FILE_PATH = "configs/context_templates.yaml"
+NUM_PROCS = 1
 
 
 def _inference_worker(rank, config):
     device = xm.xla_device()
-    world_size = 1  # xr.global_runtime_device_count()
+    world_size = NUM_PROCS
     is_main_process = rank == 0
     logger.info(f"[Rank {rank}/{world_size}] Worker started on device: {device}")
 
@@ -101,10 +100,12 @@ def _inference_worker(rank, config):
 
 
 class ModelInferencePipeline:
-    def __init__(self):
+    def __init__(self, config_file_path, context_config_file_path):
+        self.config_file_path = config_file_path
+        self.context_config_file_path = context_config_file_path
         self.config_manager = ConfigurationManager(
-            config_file_path=CONFIG_FILE_PATH,
-            context_config_file_path=CONTEXT_CONFIG_FILE_PATH,
+            self.config_file_path,
+            self.context_config_file_path,
         )
         self.config = {
             "dataset": self.config_manager.get_dataset_configuration(),
@@ -115,7 +116,12 @@ class ModelInferencePipeline:
 
     def run_inference(self):
         logger.info("Starting XLA multiprocessing inference pipeline.")
-        xmp.spawn(_inference_worker, args=(self.config,), nprocs=1, start_method="fork")
+        xmp.spawn(
+            _inference_worker,
+            args=(self.config,),
+            nprocs=NUM_PROCS,
+            start_method="fork",
+        )
         logger.info("All inference workers have completed their tasks.")
         self._aggregate_results()
 

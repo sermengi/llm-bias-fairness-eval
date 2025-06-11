@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import mlflow
 
 from src import logger
@@ -5,7 +7,15 @@ from src.inference import ModelInferencePipeline
 
 
 def main():
-    pipeline = ModelInferencePipeline()
+    script_dir = Path(__file__).resolve().parent
+    configs_dir = script_dir / "configs"
+    config_file_path = str(configs_dir / "config.yaml")
+    context_config_file_path = str(configs_dir / "context_templates.yaml")
+
+    pipeline = ModelInferencePipeline(
+        config_file_path=config_file_path,
+        context_config_file_path=context_config_file_path,
+    )
     dataset_config = pipeline.config["dataset"]
     model_config = pipeline.config["model"]
     artifact_config = pipeline.config["artifact"]
@@ -31,8 +41,7 @@ def main():
         mlflow.log_artifact(
             artifact_config.results_csv_path, artifact_path="inference_results"
         )
-        mlflow.log_artifact("config.yaml", "configurations")
-        mlflow.log_artifact("configs/context_templates.yaml", "configurations")
+        mlflow.log_artifacts(str(configs_dir), artifact_path="configurations")
 
 
 if __name__ == "__main__":
