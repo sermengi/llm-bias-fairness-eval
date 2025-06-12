@@ -3,6 +3,7 @@ from pathlib import Path
 import mlflow
 
 from src import logger
+from src.config import ConfigurationManager
 from src.inference import ModelInferencePipeline
 
 
@@ -12,13 +13,17 @@ def main():
     config_file_path = str(configs_dir / "config.yaml")
     context_config_file_path = str(configs_dir / "context_templates.yaml")
 
-    pipeline = ModelInferencePipeline(
+    config_manager = ConfigurationManager(
         config_file_path=config_file_path,
         context_config_file_path=context_config_file_path,
     )
-    dataset_config = pipeline.config["dataset"]
-    model_config = pipeline.config["model"]
-    artifact_config = pipeline.config["artifact"]
+
+    configs = config_manager.get_all_configurations()
+    dataset_config = configs["dataset"]
+    model_config = configs["model"]
+    artifact_config = configs["artifact"]
+
+    pipeline = ModelInferencePipeline(configs)
 
     mlflow.set_experiment("LLM Bias and Fairness Evaluation")
     with mlflow.start_run() as run:

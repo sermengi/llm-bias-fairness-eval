@@ -1,5 +1,6 @@
 import json
 import os
+from typing import Dict
 
 import pandas as pd
 import torch_xla.core.xla_model as xm
@@ -9,7 +10,6 @@ from torch.utils.data import DataLoader, DistributedSampler
 from tqdm import tqdm
 
 from src import logger
-from src.config import ConfigurationManager
 from src.context_generator import ContextGenerator
 from src.data_loader import GSM_MC_PromptBuilder
 from src.models import MultipleChoiceLLM
@@ -17,16 +17,16 @@ from src.models import MultipleChoiceLLM
 NUM_PROCS = 1
 
 
-def _inference_worker(rank, config):
+def _inference_worker(rank, configs):
     device = xm.xla_device()
     world_size = NUM_PROCS
     is_main_process = rank == 0
     logger.info(f"[Rank {rank}/{world_size}] Worker started on device: {device}")
 
-    dataset_config = config["dataset"]
-    model_config = config["model"]
-    artifact_config = config["artifact"]
-    context_config = config["contexts"]
+    dataset_config = configs["dataset"]
+    model_config = configs["model"]
+    artifact_config = configs["artifact"]
+    context_config = configs["context"]
 
     context_generator = ContextGenerator(context_config)
     contexts = context_generator.generate_contexts()
@@ -100,25 +100,14 @@ def _inference_worker(rank, config):
 
 
 class ModelInferencePipeline:
-    def __init__(self, config_file_path, context_config_file_path):
-        self.config_file_path = config_file_path
-        self.context_config_file_path = context_config_file_path
-        self.config_manager = ConfigurationManager(
-            self.config_file_path,
-            self.context_config_file_path,
-        )
-        self.config = {
-            "dataset": self.config_manager.get_dataset_configuration(),
-            "model": self.config_manager.get_model_configuration(),
-            "artifact": self.config_manager.get_artifact_configuration(),
-            "contexts": self.config_manager.get_contexts_configuration(),
-        }
+    def __init__(self, configs: Dict):
+        self.configs = configs
 
     def run_inference(self):
         logger.info("Starting XLA multiprocessing inference pipeline.")
         xmp.spawn(
             _inference_worker,
-            args=(self.config,),
+            args=(self.configs,),
             nprocs=NUM_PROCS,
             start_method="fork",
         )
@@ -127,7 +116,7 @@ class ModelInferencePipeline:
 
     def _aggregate_results(self):
         logger.info("Aggregating results from all worker processes...")
-        artifact_config = self.config["artifact"]
+        artifact_config = self.configs["artifact"]
         output_dir = artifact_config.artifacts_root
         prediction_file_path = artifact_config.prediction_file_path
 
