@@ -39,7 +39,8 @@ def main():
 
         pipeline.run_inference()
         mlflow.log_artifact(
-            artifact_config.results_csv_path, artifact_path="inference_results"
+            artifact_config.predictions_folder_path,
+            artifact_path=artifact_config.artifacts_root,
         )
         mlflow.log_artifacts(str(configs_dir), artifact_path="configurations")
 
