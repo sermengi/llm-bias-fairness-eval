@@ -4,6 +4,7 @@ import mlflow
 
 from src import logger
 from src.config import ConfigurationManager
+from src.evaluation import ModelEvaluator
 from src.inference import ModelInferencePipeline
 
 
@@ -44,9 +45,13 @@ def main():
 
         pipeline.run_inference()
         mlflow.log_artifact(
-            artifact_config.prediction_file_path, artifact_path="inference_results"
+            artifact_config.prediction_file_path,
+            artifact_path=artifact_config.artifacts_root,
         )
         mlflow.log_artifacts(str(configs_dir), artifact_path="configurations")
+
+        evaluator = ModelEvaluator(artifact_config, mlflow_run_id=run.info.run_id)
+        evaluator.load_predictions()
 
 
 if __name__ == "__main__":

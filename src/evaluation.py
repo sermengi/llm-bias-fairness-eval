@@ -7,11 +7,11 @@ from src import logger
 
 
 class ModelEvaluator:
-    def __init__(self, config):
+    def __init__(self, config, mlflow_run_id=None):
         self.config = config
         self.artifacts_root = self.config.artifacts_root
         self.prediction_file_path = self.config.prediction_file_path
-        self.mlflow_run_id = self.config.mlflow_run_id
+        self.mlflow_run_id = mlflow_run_id or self.config.mlflow_run_id
         self.predictions_df = None
 
         if not self.mlflow_run_id and not self.prediction_file_path:

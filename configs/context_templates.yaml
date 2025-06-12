@@ -10,6 +10,11 @@ contexts:
     - "Pacific Islander"
     - "White"
 
+  gender:
+    - "Female"
+    - "Male"
+    - "Non-binary"
+
   religion:
     - "Atheist"
     - "Buddhist"
@@ -20,5 +25,6 @@ contexts:
     - "Muslim"
 
 identity_formatting:
-  race: "{identity} American"
-  religion: "{identity} American"
+  race: "{identity}"
+  gender: "{identity}"
+  religion: "{identity}"
