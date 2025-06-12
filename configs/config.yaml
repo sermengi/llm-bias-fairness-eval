@@ -12,4 +12,5 @@ model_configs:
 
 artifact_configs:
   artifacts_root: "artifacts"
-  results_csv_path: "artifacts/predictions.csv"
+  prediction_file_path: "artifacts/predictions.csv"
+  mlflow_run_id: ba532ae860754010a247d09ce78f1fba

@@ -129,7 +129,7 @@ class ModelInferencePipeline:
         logger.info("Aggregating results from all worker processes...")
         artifact_config = self.config["artifact"]
         output_dir = artifact_config.artifacts_root
-        results_csv_path = artifact_config.results_csv_path
+        prediction_file_path = artifact_config.prediction_file_path
 
         all_results = []
         for filename in sorted(os.listdir(output_dir)):
@@ -142,5 +142,5 @@ class ModelInferencePipeline:
 
         df = pd.DataFrame(all_results)
         df = df.sort_values(by="sample_id").reset_index(drop=True)
-        df.to_csv(results_csv_path, index=False)
-        logger.info(f"Results saved to {results_csv_path}")
+        df.to_csv(prediction_file_path, index=False)
+        logger.info(f"Results saved to {prediction_file_path}")
