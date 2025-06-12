@@ -20,8 +20,7 @@ class ModelConfig(BaseModel):
 
 class ArtifactConfig(BaseModel):
     artifacts_root: str
-    predictions_folder_path: str
-    mlflow_run_id: str
+    results_csv_path: str
 
 
 class ContextConfig(BaseModel):
@@ -68,8 +67,7 @@ class ConfigurationManager:
         try:
             artifact_config = ArtifactConfig(
                 artifacts_root=config.artifacts_root,
-                predictions_folder_path=config.predictions_folder_path,
-                mlflow_run_id=config.mlflow_run_id,
+                results_csv_path=config.results_csv_path,
             )
             return artifact_config
         except ValidationError as e:
