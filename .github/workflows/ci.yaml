@@ -25,4 +25,5 @@ jobs:
     - name: Run pre-commit checks
       run: |
         uv pip install pre-commit
+        source .venv/bin/activate
         pre-commit run --all-files
