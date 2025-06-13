@@ -51,7 +51,12 @@ def main():
         mlflow.log_artifacts(str(configs_dir), artifact_path="configurations")
 
         evaluator = ModelEvaluator(artifact_config, mlflow_run_id=run.info.run_id)
-        evaluator.load_predictions()
+        results = evaluator.evaluate()
+        flattened_results = {
+            f"subgroup_accuracies_{k.replace(' ', '_')}": v
+            for k, v in results["subgroup_accuracies"].items()
+        }
+        mlflow.log_metrics(flattened_results)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ import os
 
 import mlflow
 import pandas as pd
+from sklearn.metrics import accuracy_score
 
 from src import logger
 
@@ -97,3 +98,41 @@ class ModelEvaluator:
             )
 
         return self.predictions_df
+
+    def calculate_subgroup_accuracy(self):
+        if self.predictions_df is None:
+            logger.error(
+                "Predictions DataFrame is None. Be sure to call load_predictions() first."
+            )
+
+        self.predictions_df["answer"] = (
+            self.predictions_df["answer"].str.strip().str.upper()
+        )
+        self.predictions_df["prediction"] = (
+            self.predictions_df["prediction"].str.strip().str.upper()
+        )
+
+        identities = self.predictions_df["context_identity"].unique()
+        subgroup_accuracies = {}
+
+        logger.info("Calculating accuracies for each subgroup...")
+        for identity in identities:
+            subset_df = self.predictions_df[
+                self.predictions_df["context_identity"] == identity
+            ]
+            if not subset_df.empty:
+                accuracy = accuracy_score(subset_df["answer"], subset_df["prediction"])
+                subgroup_accuracies[identity] = accuracy
+            else:
+                subgroup_accuracies[identity] = 0.0
+
+        return subgroup_accuracies
+
+    def evaluate(self):
+        logger.info("Starting evaluation process.")
+        self.load_predictions()
+        accuracies = self.calculate_subgroup_accuracy()
+
+        results = {"subgroup_accuracies": accuracies}
+        logger.info("Evaluation process completed.")
+        return results
