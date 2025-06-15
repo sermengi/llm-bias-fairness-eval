@@ -37,6 +37,7 @@ def _inference_worker(rank, configs):
         contexts=contexts,
         data_files=dataset_config.data_files,
         split=dataset_config.split,
+        allowed_choices=dataset_config.allowed_choices,
         max_samples=dataset_config.max_samples,
     )
 
@@ -56,7 +57,7 @@ def _inference_worker(rank, configs):
 
     model = MultipleChoiceLLM(
         model_name=model_config.model_name,
-        allowed_choices=model_config.allowed_choices,
+        allowed_choices=dataset_config.allowed_choices,
         tokenizer_padding_side=model_config.tokenizer_padding_side,
     )
 

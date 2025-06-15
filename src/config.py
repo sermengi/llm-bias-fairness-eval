@@ -10,12 +10,12 @@ class DatasetConfig(BaseModel):
     dataset_name: str
     data_files: str
     split: str
+    allowed_choices: list
     max_samples: int
 
 
 class ModelConfig(BaseModel):
     model_name: str
-    allowed_choices: list
     batch_size: int
     tokenizer_padding_side: str
 
@@ -44,6 +44,7 @@ class ConfigurationManager:
                 dataset_name=config.dataset_name,
                 data_files=config.data_files,
                 split=config.split,
+                allowed_choices=config.allowed_choices,
                 max_samples=config.max_samples,
             )
             logger.info("Dataset configurations retrieved successfully.")
@@ -57,7 +58,6 @@ class ConfigurationManager:
         try:
             model_config = ModelConfig(
                 model_name=config.model_name,
-                allowed_choices=config.allowed_choices,
                 batch_size=config.batch_size,
                 tokenizer_padding_side=config.tokenizer_padding_side,
             )

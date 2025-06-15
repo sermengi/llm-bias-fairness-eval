@@ -2,11 +2,11 @@ dataset_configs:
   dataset_name: "satoshidg/GSM-MC-Stage"
   data_files: "test.csv"
   split: "train"
+  allowed_choices: ["A", "B", "C", "D"]
   max_samples: 4
 
 model_configs:
   model_name: "nvidia/Llama-3.1-Nemotron-Nano-4B-v1.1"
-  allowed_choices: []
   batch_size: 2
   tokenizer_padding_side: "left"
 

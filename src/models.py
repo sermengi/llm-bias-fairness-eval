@@ -51,7 +51,7 @@ class MultipleChoiceLLM:
         else:
             logger.info(f"[{self.process_ordinal_str}] Model remains on CPU.")
 
-        self.allowed_choices = allowed_choices or ["A", "B", "C", "D"]
+        self.allowed_choices = allowed_choices
         self.allowed_token_ids = self._get_allowed_token_ids()
         self.allowed_token_id_to_choice_map = {
             token_id: choice

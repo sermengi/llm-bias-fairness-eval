@@ -6,12 +6,19 @@ from src import logger
 
 class GSM_MC_PromptBuilder(Dataset):
     def __init__(
-        self, dataset_name, contexts, data_files=None, split="train", max_samples=None
+        self,
+        dataset_name,
+        contexts,
+        data_files=None,
+        split="train",
+        allowed_choices=None,
+        max_samples=None,
     ):
         self.dataset_name = dataset_name
         self.contexts = contexts
         self.data_files = data_files
         self.split = split
+        self.allowed_choices = allowed_choices
         self.max_samples = max_samples
         self.dataset = None
         self._load_dataset()
@@ -46,7 +53,7 @@ class GSM_MC_PromptBuilder(Dataset):
     def format_sample(self, sample, context=None, answer=None):
         context = context or sample.get("Context", "").strip()
         question = sample["Question"]
-        choices = {k: str(v) for k, v in sample.items() if k in ["A", "B", "C", "D"]}
+        choices = {k: str(v) for k, v in sample.items() if k in self.allowed_choices}
         choice_list = "\n".join(
             [f"{option}. {choice}" for option, choice in choices.items()]
         )
@@ -79,7 +86,7 @@ class GSM_MC_PromptBuilder(Dataset):
         for idx, sample in enumerate(self.dataset):
             answer = sample["Answer"]
             question = sample["Question"]
-            choices = {k: sample.get(k, "") for k in ["A", "B", "C", "D"]}
+            choices = {k: sample.get(k, "") for k in self.allowed_choices}
 
             for category, contexts_in_category in self.contexts.items():
                 for identity, context_prompt in contexts_in_category.items():

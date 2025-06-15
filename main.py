@@ -1,22 +1,16 @@
-from pathlib import Path
-
 import mlflow
 
 from src import logger
 from src.config import ConfigurationManager
 from src.evaluation import ModelEvaluator
 from src.inference import ModelInferencePipeline
+from src.paths import CONFIG_FILE_PATH, CONFIGS_DIR, CONTEXT_CONFIG_FILE_PATH
 
 
 def main():
-    script_dir = Path(__file__).resolve().parent
-    configs_dir = script_dir / "configs"
-    config_file_path = str(configs_dir / "config.yaml")
-    context_config_file_path = str(configs_dir / "context_templates.yaml")
-
     config_manager = ConfigurationManager(
-        config_file_path=config_file_path,
-        context_config_file_path=context_config_file_path,
+        config_file_path=CONFIG_FILE_PATH,
+        context_config_file_path=CONTEXT_CONFIG_FILE_PATH,
     )
 
     configs = config_manager.get_all_configurations()
@@ -31,24 +25,15 @@ def main():
         mlflow.log_param("run_id", run.info.run_id)
         logger.info(f"MLflow Run ID: {run.info.run_id}")
 
-        mlflow.log_param("dataset_name", dataset_config.dataset_name)
-        mlflow.log_param("dataset_data_files", dataset_config.data_files)
-        mlflow.log_param("dataset_split", dataset_config.split)
-        mlflow.log_param("dataset_max_samples", dataset_config.max_samples)
-
-        mlflow.log_param("model_name", model_config.model_name)
-        mlflow.log_param("model_allowed_choices", model_config.allowed_choices)
-        mlflow.log_param("model_batch_size", model_config.batch_size)
-        mlflow.log_param(
-            "model_tokenizer_padding_side", model_config.tokenizer_padding_side
-        )
+        mlflow.log_params(dict(dataset_config))
+        mlflow.log_params(dict(model_config))
 
         pipeline.run_inference()
         mlflow.log_artifact(
             artifact_config.prediction_file_path,
             artifact_path=artifact_config.artifacts_root,
         )
-        mlflow.log_artifacts(str(configs_dir), artifact_path="configurations")
+        mlflow.log_artifacts(str(CONFIGS_DIR), artifact_path="configurations")
 
         evaluator = ModelEvaluator(artifact_config, mlflow_run_id=run.info.run_id)
         results = evaluator.evaluate()
